@@ -1,16 +1,15 @@
 .main-container{margin-top:8em;}
 .header-row{border-bottom: 0.1em solid #0a0a29;}
-button.run-script{color:#0a0a29;}
+.run-script{color:#0a0a29;}
 ul.nav li{margin:0.7em;color:#efefef;}
 ul.nav li input{color:#0a0a29;}
-a.navbar-brand{margin:0.7em;padding:0em;height:0em;}
+.navbar-brand{margin:0.7em;padding:0em;height:0em;}
 #navbar{max-height: 15em;}
 .input-box-text{width:20em;}
 .input-box-number{width:6em;}
 div.population{margin-top:1em;padding-right: 0.5em;}
 ul, ol{margin-left:1em;padding-left: 0em;}
 li{margin-left: 1em;padding-left: 0em;}
-#cancelScriptButton{visibility:hidden;}
 #alertHeader{color:#d00000;}
 #populationListDiv,#mateListDiv, #historyListDiv{height: 30em;overflow: scroll; border: 0.2em solid #0a0a29; width:100%;}
 table#infoTable{width:100%;}

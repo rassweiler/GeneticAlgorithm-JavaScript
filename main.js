@@ -1,8 +1,11 @@
+"use strict";
+
 //Setup input defaults when page loads
 document.addEventListener('DOMContentLoaded', function() {
     $("#targetTextInput").val("Welcome to the Shopify team!");
     $("#mutationRateInput").val(0.01);
     $("#populationSizeInput").val(1000);
+    ToggleInput(true);
 }, false);
 
 //Global variables
@@ -22,6 +25,92 @@ var aPopulationFitness = [];
 var aFitnessHistory =[];
 var fHighestFitness = 0.0;
 
+/* Clear old data */
+function ResetScript(){
+	cancelScript = false;
+	scriptCompleted = false;
+	matingPoolFilled = false;
+	gotHighestFitness = false;
+	cycleComplete = false;
+	aPopulation = [];
+	aMatingPool = []; 
+	aPopulationFitness = [];
+	aFitnessHistory =[];
+	sTargetText = "";
+	fMutationRate = 0.0;
+	iPopulationSize = 0;
+	iGeneration = 0;
+	fHighestFitness = 0.0;
+	$('#targetStringDiv').html("");
+	$('#mutationChanceDiv').html("");
+	$('#populationSizeDiv').html("");
+	$('#generationRow').html("");
+	$('#fitnessRow').html("");
+	$('#geneRow').html("");
+	$('#populationList').remove();
+	$('#mateList').remove();
+	$('#historyList').remove();
+}
+
+/* Set target text variable or display error */
+function SetTargetText(){
+	/* Get value from user */
+	sTargetText = $('#targetTextInput').val(); // Yes it's not sanitized, this isn't a web app.
+	if(sTargetText == ""){
+		$('#targetStringDiv').html("Target cannot be blank!");
+		return false;
+	}else{
+		$('#targetStringDiv').html(sTargetText);
+		return true;
+	}
+}
+
+/*Set Mutation chance variable or display error*/
+function SetMutationChance(){
+	fMutationRate = document.getElementById('mutationRateInput').value;
+	if(fMutationRate != ""){
+		try{
+			fMutationRate = Number(fMutationRate);
+			if(!IsFloat(fMutationRate) || fMutationRate > 1 || fMutationRate <= 0){
+				document.getElementById('mutationChanceDiv').innerHTML = "Mutation rate must be a float > 0 and <= 1";
+				return false;
+			}else{
+				document.getElementById('mutationChanceDiv').innerHTML = fMutationRate;
+				return true;
+			}
+		}catch(err){
+			document.getElementById('alertHeader').innerHTML = "Unable to convert mutation rate to number: "+err.message;
+			return false;
+		}
+	}else{
+		document.getElementById('mutationChanceDiv').innerHTML = "Mutation rate cannot be blank!";
+		return false;
+	}
+}
+
+/*Set population size variable or display error*/
+function SetPopulationSize(){
+	iPopulationSize = document.getElementById('populationSizeInput').value;
+	if(iPopulationSize !== ""){
+		try{
+			iPopulationSize = Number(iPopulationSize);
+			if(!IsInt(iPopulationSize) || iPopulationSize <= 0){
+				document.getElementById('populationSizeDiv').innerHTML = "Population size must be an integer greater than 0";
+				return false;
+			}else{
+				document.getElementById('populationSizeDiv').innerHTML = iPopulationSize;
+				return true;
+			}
+		}catch(err){
+			document.getElementById('alertHeader').innerHTML = "Unable to convert mutation rate to number: "+err.message;
+			return false;
+		}
+	}else{
+		document.getElementById('populationSizeDiv').innerHTML = "Population size cannot be blank!";
+		return false;
+	}
+}
+
 //Bool function determine if number is a number and if its an int
 function IsInt(number){
 	return Number(number) === number && number % 1 === 0;
@@ -30,6 +119,15 @@ function IsInt(number){
 //Bool function determine if number is a number and if its a float
 function IsFloat(number){
 	return Number(number) === number && number % 1 !== 0;
+}
+
+/* Toggle all inputs */
+function ToggleInput(state){
+	$("#runScriptButton").prop('disabled', !state);
+	$("#targetTextInput").prop('disabled', !state);
+	$("#mutationRateInput").prop('disabled', !state);
+	$("#populationSizeInput").prop('disabled', !state);
+	$("#cancelScriptButton").prop('disabled', state); 
 }
 
 //Random int, inclusive both min and max, from MDC page: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
@@ -42,7 +140,7 @@ function SetScriptCompleted(){
 	if(!cancelScript && !scriptCompleted){
 		if(fHighestFitness == 1.0 || fHighestFitness == 0){
 			scriptCompleted = true;
-			EnableInput();
+			ToggleInput(true);
 			document.getElementById('alertHeader').innerHTML = "Script Completed...";
 		}
 	}
@@ -75,7 +173,7 @@ function SetHighestFitness(){
 				var iHIndex = 0;
 				for(var index = 0; index < iPopulationSize; ++index){
 					var score = 0;
-					for(var tIndex = 0; tIndex < sTargetText.length; ++tIndex){
+					for(var tIndex = 0, length = sTargetText.length; tIndex < length; ++tIndex){
 						var targetChar = sTargetText[tIndex];
 						var geneChar = aPopulation[index][tIndex];
 						if(targetChar == geneChar){
@@ -103,13 +201,13 @@ function SetHighestFitness(){
 function CreateULFromHistory(){
 	if(!cancelScript && !scriptCompleted){
 		if(aFitnessHistory.length > 0){
-			document.getElementById('alertHeader').innerHTML = "Creating list of population...";
+			$('#alertHeader').html("Creating list of history...");
 
 			// Create the list element:
 			var list = document.createElement('ol');
 			list.setAttribute('id','historyList');
 
-			for(var index = 0; index < aFitnessHistory.length; ++index) {
+			for(var index = 0, length = aFitnessHistory.length; index < length; ++index) {
 				// Create the list item:
 				var item = document.createElement('li');
 
@@ -119,73 +217,16 @@ function CreateULFromHistory(){
 				// Add it to the list:
 				list.appendChild(item);
 			}
+			// Remove old one
 			$("#historyList").remove();
-			// Finally, return the constructed list:
-			document.getElementById('historyListDiv').appendChild(list);
-		}else{
-			setTimeout(CreateULFromHistory, 100);
+
+			// Add list to div
+			$('#historyListDiv').append(list);
 		}
 	}
 }
 
-//Set target text
-function SetTargetText(){
-	sTargetText = $('#targetTextInput').val(); //Value to used when calculated fitness, unsanitized
-	if(sTargetText == ""){
-		$('#targetStringDiv').html("Target cannot be blank!");
-		return false;
-	}else{
-		$('#targetStringDiv').html(sTargetText);
-		return true;
-	}
-}
-
-//Set Mutation rate
-function SetMutationRate(){
-	fMutationRate = document.getElementById('mutationRateInput').value;
-	if(fMutationRate != ""){
-		try{
-			fMutationRate = Number(fMutationRate);
-			if(!IsFloat(fMutationRate) || fMutationRate > 1 || fMutationRate <= 0){
-				document.getElementById('mutationChanceDiv').innerHTML = "Mutation rate must be a float > 0 and <= 1";
-				return false;
-			}else{
-				document.getElementById('mutationChanceDiv').innerHTML = fMutationRate;
-				return true;
-			}
-		}catch(err){
-			document.getElementById('alertHeader').innerHTML = "Unable to convert mutation rate to number: "+err.message;
-			return false;
-		}
-	}else{
-		document.getElementById('mutationChanceDiv').innerHTML = "Mutation rate cannot be blank!";
-		return false;
-	}
-}
-
-//Set population size
-function SetPopulationSize(){
-	iPopulationSize = document.getElementById('populationSizeInput').value;
-	if(iPopulationSize !== ""){
-		try{
-			iPopulationSize = Number(iPopulationSize);
-			if(!IsInt(iPopulationSize) || iPopulationSize <= 0){
-				document.getElementById('populationSizeDiv').innerHTML = "Population size must be an integer greater than 0";
-				return false;
-			}else{
-				document.getElementById('populationSizeDiv').innerHTML = iPopulationSize;
-				return true;
-			}
-		}catch(err){
-			document.getElementById('alertHeader').innerHTML = "Unable to convert mutation rate to number: "+err.message;
-			return false;
-		}
-	}else{
-		document.getElementById('populationSizeDiv').innerHTML = "Population size cannot be blank!";
-		return false;
-	}
-}
-
+/* Update current generation display */
 function SetGeneration(){
 	if(!cancelScript && !scriptCompleted){
 		$('#generationRow').html(iGeneration);
@@ -196,13 +237,13 @@ function SetGeneration(){
 function CreateULFromPopulation() {
 	if(!cancelScript && !scriptCompleted){
 		if(aPopulation.length == iPopulationSize){
-			document.getElementById('alertHeader').innerHTML = "Creating list of population...";
+			$('#alertHeader').html("Creating list of population...");
 
 			// Create the list element:
 			var list = document.createElement('ol');
 			list.setAttribute('id','populationList');
 
-			for(var index = 0; index < aPopulation.length; ++index) {
+			for(var index = 0, length = aPopulation.length; index < length; ++index) {
 				// Create the list item:
 				var item = document.createElement('li');
 
@@ -214,10 +255,7 @@ function CreateULFromPopulation() {
 				list.appendChild(item);
 			}
 			$('#populationList').remove();
-			// Finally, return the constructed list:
-			document.getElementById('populationListDiv').appendChild(list);
-		}else{
-			setTimeout(CreateULFromPopulation, 100);
+			$('#populationListDiv').append(list);
 		}
 	}
 }
@@ -226,13 +264,13 @@ function CreateULFromPopulation() {
 function CreateULFromMatingPool() {
 	if(!cancelScript && !scriptCompleted){
 		if(matingPoolFilled && aMatingPool.length > 0){
-			document.getElementById('alertHeader').innerHTML = "Creating list of mates...";
+			$('#alertHeader').html("Creating list of mates...");
 
 			// Create the list element:
 			var list = document.createElement('ul');
 			list.setAttribute('id','mateList');
 
-			for(var index = 0; index < aMatingPool.length; ++index) {
+			for(var index = 0, length = aMatingPool.length; index < length; ++index) {
 				// Create the list item:
 				var item = document.createElement('li');
 
@@ -243,19 +281,17 @@ function CreateULFromMatingPool() {
 				list.appendChild(item);
 			}
 			$('#mateList').remove();
-			// Finally, return the constructed list:
-			document.getElementById('mateListDiv').appendChild(list);
-		}else{
-			setTimeout(CreateULFromMatingPool, 100);
+			$('#mateListDiv').append(list);
 		}
 	}
 }
 
+/* Rebuild population pool from mating pool */
 function SetPopulation(){
 	if(!cancelScript && !scriptCompleted){
 		if(matingPoolFilled && aMatingPool.length > 0){
 			if(aPopulation.length < iPopulationSize){
-				document.getElementById('alertHeader').innerHTML = "Building population...";
+				document.getElementById('alertHeader').innerHTML = "Running Script...";
 				var iGeneLength = sTargetText.length;
 				if(IsInt(iGeneLength) && iGeneLength > 0){
 					var aGene = new Array(iGeneLength);
@@ -288,6 +324,7 @@ function SetPopulation(){
 	}
 }
 
+/* Check each gene of each population if it should be mutated. NOTE: Do this when filling population pool instead */
 function MutatePopulation(){
 	if(!cancelScript && !scriptCompleted){
 		if(!matingPoolFilled && aMatingPool.length == 0){
@@ -310,7 +347,7 @@ function MutatePopulation(){
 	}
 }
 
-//Add a new random sequence to the population pool
+/*Add a new random sequence to the population pool*/
 function AddRandomToPopulation(){
 	if(!cancelScript && !scriptCompleted && aPopulation.length < iPopulationSize){
 		document.getElementById('alertHeader').innerHTML = "Building initial population...";
@@ -334,48 +371,14 @@ function AddRandomToPopulation(){
 	}
 }
 
-//When the cancel button is pressed
+/* When the cancel button is pressed */
 function CancelAlgorithm(){
 	cancelScript = true;
-	document.getElementById('alertHeader').innerHTML = "Cancelled script...";
+	$('#alertHeader').html("Cancelled script...");
 	setTimeout(ResetScript, 0);
 }
 
-function ResetScript(){
-	cancelScript = false;
-	scriptCompleted = false;
-	matingPoolFilled = false;
-	gotHighestFitness = false;
-	cycleComplete = false;
-	aPopulation = []; //Clear population array
-	aMatingPool = []; //Clear mating pool array
-	aPopulationFitness = [];
-	aFitnessHistory =[];
-	sTargetText = "";
-	fMutationRate = 0.0;
-	iPopulationSize = 0;
-	iGeneration = 0;
-	fHighestFitness = 0.0;
-	document.getElementById('targetStringDiv').innerHTML = "";
-	document.getElementById('mutationChanceDiv').innerHTML = "";
-	document.getElementById('populationSizeDiv').innerHTML = "";
-	EnableInput();
-	$('#populationList').remove(); //Remove old population list if present
-	$('#mateList').remove(); //Remove old population list if present
-	$('#historyList').remove(); //Remove history list
-	$('#generationRow').html("");
-	$('#fitnessRow').html("");
-	$('#geneRow').html("");
-}
-
-function EnableInput(){
-	document.getElementById("runScriptButton").disabled = false; //Enable button when finished
-	document.getElementById("targetTextInput").disabled = false; //Enable Target when finished
-	document.getElementById("mutationRateInput").disabled = false; //Enable Mutation when finished
-	document.getElementById("populationSizeInput").disabled = false; //Enable Population when finished
-	document.getElementById("cancelScriptButton").style.visibility = 'hidden'; //Hide cancel button when finished
-}
-
+/* Main loop */
 function CycleOfLife(){
 	if(!cancelScript && !scriptCompleted){
 		if(aPopulation.length == iPopulationSize){
@@ -394,30 +397,28 @@ function CycleOfLife(){
 				SetScriptCompleted();
 			}
 		}
-		setTimeout(CycleOfLife, 1000);
+		setTimeout(CycleOfLife, 800);
 	}
 }
 
+/* Entry point, from start button */
 function RunAlgorithm(){
-
+	var runCode = true;
+	/* Clear any previous data */
 	ResetScript();
 
-	//Get and check the target text
+	/*Get and check the target text*/
 	runCode = SetTargetText();
 
-	//Get and check the mutation rate
-	runCode = SetMutationRate();
+	/*Get and check the mutation rate*/
+	runCode = SetMutationChance();
 
-	//Get and check the population size
+	/*Get and check the population size */
 	runCode = SetPopulationSize();
 
+	/* If all parameters are set, begin the algorithm */
 	if(runCode){
-		//Disable all inputs and show the cancel option
-		document.getElementById("runScriptButton").disabled = true; //Disable button while running code
-		document.getElementById("targetTextInput").disabled = true; //Disable Target while running code
-		document.getElementById("mutationRateInput").disabled = true; //Disable Mutation while running code
-		document.getElementById("populationSizeInput").disabled = true; //Disable Population while running code
-		document.getElementById("cancelScriptButton").style.visibility = 'visible'; //Show cancel button while running code
+		ToggleInput(false);
 		AddRandomToPopulation();
 		cycleComplete = true;
 		CycleOfLife();
