@@ -1,4 +1,6 @@
 #Simple Genetic Algorithm JavaScript Edition
+![ScreenShot](Development/Screen001.png)
+![ScreenShot](Development/Screen002.png)
 
 ##About
 This is an attempt at getting this algorithm to run within a browser, uses both javascript and jQuery.
